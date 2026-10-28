@@ -1,0 +1,48 @@
+#!/bin/bash
+
+dir_path=""
+name=""
+
+while getopts "d:n:" opt
+do
+    case $opt in
+        d) dir_path=$OPTARG ;;
+        n) name=$OPTARG ;;
+        *) echo "Использование: $0 -d dir_path -n name"; exit 1 ;;
+    esac
+done
+
+if [[ -z "$dir_path" || -z "$name" ]]
+then
+    echo "Использование: $0 -d dir_path -n name"
+    exit 1
+fi
+
+if [[ ! -d "$dir_path" ]]
+then
+    echo "Ошибка: $dir_path - не каталог"
+    exit 1
+fi
+
+cat > "$name" <<'END'
+
+unpack_dir="."
+
+while getopts "o:" opt
+do
+    case $opt in
+        o) unpack_dir=$OPTARG ;;
+        *) echo "Использование: $0 [-o unpackdir]"; exit 1 ;;
+    esac
+done
+
+mkdir -p "$unpack_dir"
+
+sed '1,/^__ARCHIVE__$/d' "$0" | base64 -d | tar -xzf - -C "$unpack_dir"
+exit 0
+__ARCHIVE__
+END
+
+tar -czf - -C "$dir_path" . | base64 >> "$name"
+
+chmod a+x "$name"
