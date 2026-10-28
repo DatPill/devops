@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [[ $# -ne 1 || ! -d "$1" ]]
+then
+    echo "Ошибка: нужно указать каталог"
+    exit 1
+fi
+
+user=$(whoami)
+date=$(date -I)
+
+for file in "$1"/*.txt
+do
+    if [[ ! -f "$file" ]]
+    then
+        continue
+    fi
+
+    echo "Approved $user $date" > /tmp/addline_tmp
+    cat "$file" >> /tmp/addline_tmp
+    cat /tmp/addline_tmp > "$file"
+done
+rm -f /tmp/addline_tmp
