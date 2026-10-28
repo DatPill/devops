@@ -1,0 +1,46 @@
+#!/bin/bash
+
+if [[ $# -ne 3 ]]
+then
+    echo "Использование: $0 dir old_suffix new_suffix"
+    exit 1
+fi
+
+dir=$1
+old=$2
+new=$3
+
+if [[ ! -d "$dir" ]]
+then
+    echo "Ошибка: $dir - не каталог"
+    exit 1
+fi
+
+if [[ ! "$old" =~ ^\.[^.]+$ ]]
+then
+    echo "Ошибка: $old - не суффикс"
+    exit 1
+fi
+if [[ ! "$new" =~ ^\.[^.]+$ ]]
+then
+    echo "Ошибка: $new - не суффикс"
+    exit 1
+fi
+
+find "$dir" -type f -name "*$old" | while read -r file
+do
+    name=${file##*/}
+    folder=${file%/*}
+
+    without_dot=${name#.}
+    if [[ "$without_dot" != *.* ]]
+    then
+        continue
+    fi
+
+    suffix=".${name##*.}"
+    if [[ "$suffix" == "$old" ]]
+    then
+        mv "$file" "$folder/${name%$old}$new"
+    fi
+done
