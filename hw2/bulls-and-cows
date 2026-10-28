@@ -1,0 +1,90 @@
+#!/bin/bash
+
+trap 'echo; echo "Чтобы выйти, введите q или Q"' SIGINT
+
+secret=""
+while [[ ${#secret} -lt 4 ]]
+do
+    digit=$((RANDOM % 10))
+    if [[ "$secret" != *"$digit"* ]]
+    then
+        secret="$secret$digit"
+    fi
+done
+
+echo "********************************************************************************"
+echo "* Я загадал 4-значное число с неповторяющимися цифрами. На каждом ходу делайте *"
+echo "* попытку отгадать загаданное число. Попытка - это 4-значное число с           *"
+echo "* неповторяющимися цифрами.                                                    *"
+echo "********************************************************************************"
+echo
+
+history=()
+attempt=1
+
+while true
+do
+    read -p "Попытка $attempt: " answer
+
+    if [[ "$answer" == "q" || "$answer" == "Q" ]]
+    then
+        exit 1
+    fi
+
+    if [[ ! "$answer" =~ ^[0-9]{4}$ ]]
+    then
+        echo "Ошибка: нужно ввести 4-значное число с неповторяющимися цифрами"
+        echo
+        continue
+    fi
+
+    repeat=0
+    for i in 0 1 2 3
+    do
+        for j in 0 1 2 3
+        do
+            if (( i != j )) && [[ "${answer:i:1}" == "${answer:j:1}" ]]
+            then
+                repeat=1
+            fi
+        done
+    done
+    if (( repeat == 1 ))
+    then
+        echo "Ошибка: нужно ввести 4-значное число с неповторяющимися цифрами"
+        echo
+        continue
+    fi
+
+    bulls=0
+    cows=0
+    for i in 0 1 2 3
+    do
+        if [[ "${answer:i:1}" == "${secret:i:1}" ]]
+        then
+            bulls=$((bulls + 1))
+        elif [[ "$secret" == *"${answer:i:1}"* ]]
+        then
+            cows=$((cows + 1))
+        fi
+    done
+
+    echo "Коров - $cows, Быков - $bulls"
+    history+=("$attempt. $answer (Коров - $cows Быков - $bulls)")
+
+    if (( bulls == 4 ))
+    then
+        echo "Вы угадали число $secret!"
+        exit 0
+    fi
+
+    echo
+    echo "История ходов:"
+    for line in "${history[@]}"
+    do
+        echo "$line"
+    done
+    echo
+
+    attempt=$((attempt + 1))
+done
