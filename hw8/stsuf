@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [[ $# -ne 1 || ! -d "$1" ]]
+then
+    echo "Ошибка: нужно указать каталог"
+    exit 1
+fi
+
+declare -A stat
+
+while read -r file
+do
+    name=${file##*/}
+    without_dot=${name#.}
+
+    if [[ "$without_dot" == *.* ]]
+    then
+        key=".${name##*.}"
+    else
+        key="no suffix"
+    fi
+
+    stat[$key]=$(( ${stat[$key]:-0} + 1 ))
+done < <(find "$1" -type f)
+
+for key in "${!stat[@]}"
+do
+    echo "$key: ${stat[$key]}"
+done | sort -t: -k2 -nr
