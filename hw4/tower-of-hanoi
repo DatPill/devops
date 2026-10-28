@@ -1,0 +1,102 @@
+#!/bin/bash
+
+trap 'echo; echo "Чтобы выйти, введите q или Q"' SIGINT
+
+A=(8 7 6 5 4 3 2 1)
+B=()
+C=()
+move=1
+
+load() {
+    case $1 in
+        a) tmp=("${A[@]}") ;;
+        b) tmp=("${B[@]}") ;;
+        c) tmp=("${C[@]}") ;;
+    esac
+}
+
+save() {
+    case $1 in
+        a) A=("${tmp[@]}") ;;
+        b) B=("${tmp[@]}") ;;
+        c) C=("${tmp[@]}") ;;
+    esac
+}
+
+draw() {
+    for level in 7 6 5 4 3 2 1 0
+    do
+        a=" "
+        b=" "
+        c=" "
+        if (( ${#A[@]} > level )); then a=${A[level]}; fi
+        if (( ${#B[@]} > level )); then b=${B[level]}; fi
+        if (( ${#C[@]} > level )); then c=${C[level]}; fi
+        echo "|$a|  |$b|  |$c|"
+    done
+    echo "+-+  +-+  +-+"
+    echo " A    B    C"
+    echo
+}
+
+draw
+
+while true
+do
+    read -p "Ход № $move (откуда, куда): " answer
+
+    answer=${answer// /}
+    answer=${answer,,}
+
+    if [[ "$answer" == "q" ]]
+    then
+        exit 1
+    fi
+
+    if [[ ! "$answer" =~ ^[abc][abc]$ ]]
+    then
+        echo "Ошибка: введите имена двух стеков (A, B, C) или q для выхода"
+        continue
+    fi
+
+    from=${answer:0:1}
+    to=${answer:1:1}
+
+    load $from
+    src=("${tmp[@]}")
+    load $to
+    dst=("${tmp[@]}")
+
+    if (( ${#src[@]} == 0 )) || [[ $from == $to ]]
+    then
+        echo "Такое перемещение запрещено!"
+        continue
+    fi
+
+    disk=${src[-1]}
+
+    if (( ${#dst[@]} > 0 )) && (( ${dst[-1]} < disk ))
+    then
+        echo "Такое перемещение запрещено!"
+        continue
+    fi
+
+    unset 'src[-1]'
+    dst+=($disk)
+
+    tmp=("${src[@]}")
+    save $from
+    tmp=("${dst[@]}")
+    save $to
+
+    echo
+    draw
+
+    if [[ "${B[*]}" == "8 7 6 5 4 3 2 1" || "${C[*]}" == "8 7 6 5 4 3 2 1" ]]
+    then
+        echo "Вы победили за $move ходов!"
+        exit 0
+    fi
+
+    move=$((move + 1))
+done
