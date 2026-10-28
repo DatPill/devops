@@ -1,0 +1,113 @@
+#!/bin/bash
+
+board=()
+moves=1
+message=""
+
+get_neighbours() {
+    pos=$1
+    row=$((pos / 4))
+    col=$((pos % 4))
+    nb=()
+    if (( row > 0 )); then nb+=($((pos - 4))); fi
+    if (( row < 3 )); then nb+=($((pos + 4))); fi
+    if (( col > 0 )); then nb+=($((pos - 1))); fi
+    if (( col < 3 )); then nb+=($((pos + 1))); fi
+}
+
+draw() {
+    echo "+-------------------+"
+    for row in 0 1 2 3
+    do
+        line="|"
+        for col in 0 1 2 3
+        do
+            cell=${board[row * 4 + col]}
+            line="$line $(printf '%-2s' "$cell") |"
+        done
+        echo "$line"
+        if (( row < 3 )); then echo "|-------------------|"; fi
+    done
+    echo "+-------------------+"
+}
+
+is_solved() {
+    for i in {0..14}
+    do
+        if [[ "${board[i]}" != "$((i + 1))" ]]
+        then
+            return 1
+        fi
+    done
+    return 0
+}
+
+for i in {0..14}
+do
+    board[i]=$((i + 1))
+done
+board[15]=""
+empty=15
+
+for i in {1..300}
+do
+    get_neighbours $empty
+    n=${nb[RANDOM % ${#nb[@]}]}
+    board[empty]=${board[n]}
+    board[n]=""
+    empty=$n
+done
+
+while true
+do
+    echo "Ход № $moves"
+    echo
+    draw
+    echo
+    if [[ -n "$message" ]]
+    then
+        echo -e "$message"
+        echo
+        message=""
+    fi
+
+    read -p "Ваш ход (q - выход): " answer
+
+    if [[ "$answer" == "q" ]]
+    then
+        exit 0
+    fi
+
+    get_neighbours $empty
+    target=-1
+    allowed=""
+    for n in "${nb[@]}"
+    do
+        allowed="$allowed${board[n]}, "
+        if [[ "${board[n]}" == "$answer" ]]
+        then
+            target=$n
+        fi
+    done
+
+    if (( target == -1 ))
+    then
+        message="Неверный ход!\nНевозможно костяшку $answer передвинуть на пустую ячейку.\nМожно выбрать: ${allowed%, }"
+        continue
+    fi
+
+    board[empty]=${board[target]}
+    board[target]=""
+    empty=$target
+
+    if is_solved
+    then
+        echo
+        echo "Вы собрали головоломку за $moves ходов."
+        echo
+        draw
+        exit 0
+    fi
+
+    moves=$((moves + 1))
+done
